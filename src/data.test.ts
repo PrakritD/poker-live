@@ -80,3 +80,14 @@ test('announce: one new buy-in/cash-out only, with the line as it was', () => {
   assert.equal(announce(s1, night([...s1.events, e(2, 'adjust', 'a', -100)])), undefined)
   assert.equal(announce(s1, night([...s1.events, e(2, 'buyin', 'b', 1), e(2, 'buyin', 'c', 1)])), undefined)
 })
+
+test('new player and first buy-in are one atomic draft mutation', async () => {
+  const { addPlayerAndBuyIn } = await import('./data.ts')
+  const d = restore('{"players":[],"sessions":[{"id":"night","name":"Night","startedAt":1,"defaultBuyIn":5000,"events":[]}]}')
+  let saves = 0
+  const lockedMut = (fn: (draft: typeof d) => void) => { assert.equal(saves++, 0); fn(d) }
+  lockedMut(draft => addPlayerAndBuyIn(draft, {id:'new',name:'New Player',color:'red'}, 5000, 2))
+  assert.equal(saves, 1)
+  assert.equal(d.players[0].id, 'new')
+  assert.deepEqual(d.sessions[0].events, [{type:'buyin',player:'new',cents:5000,t:2}])
+})

@@ -1,0 +1,13 @@
+project_id = "poker-live"
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+[db]
+major_version = 17
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173/**"]
+[auth.email]
+enable_signup = false

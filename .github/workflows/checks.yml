@@ -1,0 +1,50 @@
+name: Checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: node scripts/test-build-config.mjs
+      - name: Build original local mode
+        run: npm run build -- --base=/poker-live/
+      - name: Reject partial cloud configuration
+        run: |
+          if VITE_SUPABASE_URL=https://example.supabase.co npm run build; then
+            echo 'Partial cloud configuration unexpectedly built'
+            exit 1
+          fi
+      - name: Build shared mode without real history
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_not_a_real_key
+        run: npm run build
+      - run: node scripts/check-cloud-privacy.mjs
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Database authorization and transaction tests
+        run: bash scripts/test-database.sh
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser

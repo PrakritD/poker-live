@@ -1,18 +1,22 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { CHIPS, ink, usd, cents, clock, uid, nightName, lines, live, ended, leaderboard, profitSeries, payments, restore, inPlay, buyIn, cashOut, startNight, fixChips, type Data, type Mut, type Who, type Session, type Settings } from './data.ts'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { CHIPS, ink, usd, cents, clock, uid, nightName, lines, live, ended, leaderboard, profitSeries, payments, restore, inPlay, buyIn, cashOut, startNight, fixChips, addPlayerAndBuyIn, type Data, type Mut, type Who, type Session, type Settings } from './data.ts'
+import { applyImport, applySettingsDraft, parseImport } from './cloud.ts'
 import { runEquity, type EquityTally } from './equity.ts'
 import { Avatar, vars } from './Board.tsx'
 
-type P = { data: Data; mut: Mut; who: Who; onClose: () => void }
+export const SheetBusy = createContext(false)
+
+type P = { data: Data; mut: Mut; who: Who; onClose: () => void; shared?: boolean; readOnly?: boolean; groupName?: string }
 
 function Sheet({ title, onClose, wide, children }: { title: ReactNode; onClose: () => void; wide?: boolean; children: ReactNode }) {
+  const busy = useContext(SheetBusy)
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     if (!ref.current?.open) ref.current?.showModal()
     ref.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus() // showModal would focus the ✕ first
   }, [])
   return (
-    <dialog ref={ref} className={wide ? 'sheet wide' : 'sheet'} onClose={onClose} onClick={e => e.target === ref.current && onClose()}>
+    <dialog inert={busy} ref={ref} className={wide ? 'sheet wide' : 'sheet'} onClose={onClose} onClick={e => e.target === ref.current && onClose()}>
       <div className="sheet-in">
         <header>
           <h2>{title}</h2>
@@ -52,7 +56,7 @@ function Money({ value, onChange }: { value: number; onChange: (c: number) => vo
 
 const freeColor = (d: Data) => Object.keys(CHIPS).find(k => !d.players.some(p => p.color === k)) ?? 'gray'
 
-function NewPlayer({ data, mut, label, onAdd }: { data: Data; mut: Mut; label: string; onAdd: (id: string) => void }) {
+function NewPlayer({ data, mut, label, onAdd, buyInCents }: { data: Data; mut: Mut; label: string; onAdd: (id: string) => void; buyInCents?: number }) {
   const [name, setName] = useState('')
   const [color, setColor] = useState<string>()
   const c = color ?? freeColor(data)
@@ -63,7 +67,8 @@ function NewPlayer({ data, mut, label, onAdd }: { data: Data; mut: Mut; label: s
         e.preventDefault()
         if (!name.trim()) return
         const id = uid()
-        mut(d => void d.players.push({ id, name: name.trim(), color: c }))
+        const player = { id, name: name.trim(), color: c }; const t = Date.now()
+        mut(d => { if (buyInCents === undefined) d.players.push(player); else addPlayerAndBuyIn(d, player, buyInCents, t) })
         setName('')
         setColor(undefined)
         onAdd(id)
@@ -165,8 +170,9 @@ export function AddSheet({ data, mut, onClose, onPick, q: q0 = '' }: P & { onPic
     if (!s) return // an empty Enter never seats anyone
     if (hits[0]) return pick(hits[0].id)
     const id = uid()
-    mut(d => void d.players.push({ id, name: q.trim(), color: freeColor(d) }))
-    seat(id)
+    const t = Date.now()
+    mut(d => addPlayerAndBuyIn(d, { id, name: q.trim(), color: freeColor(d) }, amt, t))
+    onClose()
   }
   return (
     <Sheet title="Add to the table" onClose={onClose}>
@@ -190,7 +196,7 @@ export function AddSheet({ data, mut, onClose, onPick, q: q0 = '' }: P & { onPic
         </>
       )}
       <h3>Someone new</h3>
-      <NewPlayer data={data} mut={mut} label={`Add · ${usd(amt)}`} onAdd={seat} />
+      <NewPlayer data={data} mut={mut} label={`Add · ${usd(amt)}`} buyInCents={amt} onAdd={onClose} />
     </Sheet>
   )
 }
@@ -451,7 +457,7 @@ function Chart({ series, who, n }: { series: Record<string, number[]>; who: Who;
   )
 }
 
-export function HistorySheet({ data, mut, who, onClose }: P) {
+export function HistorySheet({ data, mut, who, onClose, readOnly }: P) {
   const nights = ended(data), lb = leaderboard(nights)
   const [open, setOpen] = useState<string>()
   return (
@@ -511,7 +517,7 @@ export function HistorySheet({ data, mut, who, onClose }: P) {
                     <div className="night-body">
                       <Results s={s} who={who} />
                       <PayList s={s} who={who} />
-                      <button className="btn danger" onClick={() => confirm(`Delete ${s.name}? This can't be undone.`) && mut(d => void (d.sessions = d.sessions.filter(x => x.id !== s.id)))}>
+                      <button disabled={readOnly} className="btn danger" onClick={() => confirm(`Delete ${s.name}? This can't be undone.`) && mut(d => void (d.sessions = d.sessions.filter(x => x.id !== s.id)))}>
                         Delete night
                       </button>
                     </div>
@@ -531,14 +537,33 @@ function exportJson(d: Data) {
   a.href = URL.createObjectURL(new Blob([JSON.stringify(d, null, 2)], { type: 'application/json' }))
   a.download = `poker-live-${new Date().toISOString().slice(0, 10)}.json`
   a.click()
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+  window.setTimeout(() => URL.revokeObjectURL(a.href), 1000)
 }
 
-export function SettingsSheet({ data, mut, onClose }: P) {
+export function SettingsSheet(props: P) {
+  const [draft, setDraft] = useState(() => structuredClone(props.data))
+  const base = useRef(structuredClone(props.data))
+  const editing = useRef(draft)
+  useEffect(() => {
+    if (!props.shared) return
+    const fresh = structuredClone(props.data)
+    try { applySettingsDraft(fresh, base.current, editing.current) } catch { return } // Preserve conflicting edits for an explicit save error.
+    base.current = structuredClone(props.data)
+    editing.current = fresh
+    setDraft(fresh)
+  }, [props.data, props.shared])
+  if (!props.shared) return <SettingsEditor {...props} />
+  const edit: Mut = fn => { const next = structuredClone(editing.current); fn(next); editing.current = next; setDraft(next) }
+  return <SettingsEditor {...props} data={draft} mut={edit} importMut={props.mut} onSave={() => { props.mut(d => applySettingsDraft(d, base.current, editing.current)); props.onClose() }} />
+}
+
+function SettingsEditor({ data, mut, onClose, shared, importMut, onSave, groupName }: P & { importMut?: Mut; onSave?: () => void }) {
   const s = data.settings, used = new Set(data.sessions.flatMap(x => x.events.map(e => e.player)))
   const set = (fn: (s: Settings) => void) => mut(d => fn(d.settings))
   return (
     <Sheet title="Settings" wide onClose={onClose}>
+      {onSave && <p className="dim">Edit settings below, then save your changes together.</p>}
+      {onSave && <button className="btn primary wide" onClick={onSave}>Save changes</button>}
       <h3>Theme</h3>
       <Seg<Settings['theme']>
         options={[
@@ -622,7 +647,13 @@ export function SettingsSheet({ data, mut, onClose }: P) {
               e.target.value = ''
               if (!f) return
               try {
-                const d = restore(await f.text())
+                const text = await f.text()
+                if (shared) {
+                  const incoming = parseImport(text)
+                  if (confirm(`Import ${incoming.players.length} players and ${incoming.sessions.length} games into ${groupName ?? 'this group'}? Existing records are preserved; conflicts will reject the import.`)) (importMut ?? mut)(d => applyImport(d, incoming))
+                  return
+                }
+                const d = restore(text)
                 if (confirm(`Replace everything here with ${d.players.length} players and ${d.sessions.length} nights from ${f.name}?`)) mut(x => void Object.assign(x, d))
               } catch (err) {
                 alert(String(err))
@@ -631,6 +662,7 @@ export function SettingsSheet({ data, mut, onClose }: P) {
           />
         </label>
       </div>
+      {onSave && <button className="btn primary wide" onClick={onSave}>Save changes</button>}
     </Sheet>
   )
 }
@@ -645,9 +677,9 @@ const shuffle = <T,>(a: T[]) => {
 }
 
 // Random seats clockwise from the top; the top seat has the button.
-export function SeatsSheet({ data, who, onClose }: P) {
+export function SeatsSheet({ data, mut, who, onClose }: P) {
   const ids = lines(live(data)!).filter(l => l.seated).map(l => l.id)
-  const [order, setOrder] = useState(() => shuffle(ids))
+  const [order, setOrder] = useState(() => [...(live(data)!.seats ?? []).filter(id => ids.includes(id)), ...ids.filter(id => !live(data)!.seats?.includes(id))])
   return (
     <Sheet title="Seats" wide onClose={onClose}>
       {order.length ? (
@@ -663,7 +695,9 @@ export function SeatsSheet({ data, who, onClose }: P) {
       ) : (
         <p className="dim">Nobody's seated.</p>
       )}
-      <button className="btn primary big wide" onClick={() => setOrder(shuffle(ids))}>
+      <div className="grid2">{order.map((id, i) => <label className="field" key={id}>Seat {i + 1}<select aria-label={`Seat ${i + 1}`} value={id} onChange={e => { const next = [...order]; const other = next.indexOf(e.target.value); [next[i], next[other]] = [next[other], next[i]]; setOrder(next) }}>{order.map(p => <option key={p} value={p}>{who(p).name}</option>)}</select></label>)}</div>
+      <button className="btn primary big wide" onClick={() => { mut(d => { live(d)!.seats = order }); onClose() }}>Save seats</button>
+      <button className="btn big wide" onClick={() => setOrder(shuffle(ids))}>
         Shuffle again
       </button>
     </Sheet>
@@ -698,7 +732,7 @@ export function EquitySheet({ onClose }: { onClose: () => void }) {
       let r = gen.next()
       while (!r.done && performance.now() < end) r = gen.next()
       setRes(r.value)
-      if (!r.done) t = setTimeout(step)
+      if (!r.done) t = window.setTimeout(step)
     }
     step()
     return () => clearTimeout(t)

@@ -195,7 +195,8 @@ function Candles({ pts, t0, t1 }: { pts: [number, number][]; t0: number; t1: num
 }
 
 export function LiveBoard({ night, who, flash, onPick }: { night: Session; who: Who; flash?: string; onPick: (id: string) => void }) {
-  const ls = lines(night), cols = ls.length > 8 ? 2 : 1, L = useL()
+  const positions = new Map((night.seats ?? []).map((id, i) => [id, i]))
+  const ls = lines(night).sort((a, b) => (positions.get(a.id) ?? Infinity) - (positions.get(b.id) ?? Infinity)), cols = ls.length > 8 ? 2 : 1, L = useL()
   if (!ls.length) return <div className="empty">Nobody at the table yet. Move the mouse → ＋ Player</div>
   return (
     <div className="board" style={vars({ '--cols': cols, '--rows': Math.ceil(ls.length / cols) })}>
@@ -441,12 +442,12 @@ export function Final({ night, who, pays }: { night: Session; who: Who; pays: Pa
   const term = useContext(Skin), done = shown >= ls.length, champ = ls[0] && who(ls[0].id)
   useEffect(() => {
     if (shown >= ls.length) {
-      const t = setTimeout(() => setView(v => (v === 'results' ? 'pay' : 'results')), view === 'results' ? 12e3 : 20e3)
+      const t = window.setTimeout(() => setView(v => (v === 'results' ? 'pay' : 'results')), view === 'results' ? 12e3 : 20e3)
       return () => clearTimeout(t)
     }
     const champ = shown === ls.length - 1
     if (champ) sfx.drumroll(2.2)
-    const t = setTimeout(() => (setShown(s => s + 1), champ ? sfx.crash() : sfx.tick()), champ ? 2400 : shown ? 900 : 1400)
+    const t = window.setTimeout(() => (setShown(s => s + 1), champ ? sfx.crash() : sfx.tick()), champ ? 2400 : shown ? 900 : 1400)
     return () => clearTimeout(t)
   }, [shown, view, ls.length])
 
@@ -588,7 +589,7 @@ export function Ambient({ feed }: { feed: string[] }) {
       const ks = now.current.term ? TERM_KINDS : KINDS, kind = ks[(Math.random() * ks.length) | 0], text = kind === 'tail' || kind === 'book'
       const extra = kind === 'walk' ? walk() : kind === 'fan' ? { paths: fan() } : kind === 'tail' ? { txt: tail(now.current.feed) } : kind === 'book' ? { txt: book() } : {}
       add({ kind, x: 5 + Math.random() * (text ? 55 : 90), y: 5 + Math.random() * (text ? 70 : 90), z: Math.random(), ...extra })
-      t = setTimeout(spawn, 2500 + Math.random() * 5000)
+      t = window.setTimeout(spawn, 2500 + Math.random() * 5000)
     }
     const move = (e: PointerEvent) => {
       const el = e.target as Element

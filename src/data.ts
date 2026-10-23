@@ -2,7 +2,7 @@ import { settle, banker, split, type Payment } from './settle.ts'
 
 export type Player = { id: string; name: string; color: string }
 export type Event = { t: number; type: 'buyin' | 'cashout' | 'adjust'; player: string; cents: number }
-export type Session = { id: string; name: string; startedAt: number; endedAt?: number; defaultBuyIn: number; banker?: boolean; host?: string; events: Event[] }
+export type Session = { id: string; name: string; startedAt: number; endedAt?: number; defaultBuyIn: number; banker?: boolean; host?: string; events: Event[]; seats?: string[] }
 export type Timer = { mean: number; stdev: number; min: number } // minutes
 export type Settings = { defaultBuyIn: number; buyIns: number[]; denoms: Record<string, number>; volume: number; music: boolean; timer: Timer; theme: 'quote' | 'terminal' }
 export type Data = { players: Player[]; sessions: Session[]; settings: Settings }
@@ -90,6 +90,11 @@ export const inPlay = (s: Session) => s.events.reduce((a, e) => a + delta(e), 0)
 // Night verbs: the writes to the event log that carry rules. `t` comes from the caller, since mut() runs twice under StrictMode.
 export function buyIn(d: Data, player: string, cents: number, t: number) {
   if (cents > 0) live(d)!.events.push({ t, type: 'buyin', player, cents })
+}
+// Creating a first-time participant and their buy-in is one transaction in shared mode.
+export function addPlayerAndBuyIn(d: Data, player: Player, cents: number, t: number) {
+  d.players.push(player)
+  buyIn(d, player.id, cents, t)
 }
 export function cashOut(d: Data, player: string, cents: number, t: number) {
   live(d)!.events.push({ t, type: 'cashout', player, cents: Math.max(0, cents) })

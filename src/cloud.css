@@ -1,0 +1,118 @@
+body:has(.cloud-shell) { height:auto; min-height:100dvh; overflow:auto; }
+.cloud-shell { display:flex; flex-direction:column; min-height:100dvh; overflow-x:clip; }
+.cloud-shell .app { position:relative; flex:1; min-height:75dvh; }
+.cloud-shell .stage { position:relative; inset:auto; min-height:75dvh; }
+.cloud-bar,.cloud-controls { position:relative; z-index:5; padding:12px 20px; background:#111820; color:#f2f3f5; border-bottom:1px solid #475569; font:14px/1.5 system-ui,sans-serif; }
+.cloud-bar { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; }
+.cloud-bar strong { margin-right:auto; }
+.cloud-shell button,.cloud-shell select,.cloud-shell input { font:inherit; }
+.cloud-bar button,.cloud-controls button { padding:8px 12px; min-height:44px; border:1px solid #64748b; border-radius:6px; background:#202d3b; color:#fff; cursor:pointer; }
+.cloud-shell button:disabled { opacity:.45; cursor:wait; }
+.cloud-controls summary { cursor:pointer; padding:6px 0; }
+.cloud-controls form,.member,.share-controls { display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin:12px 0; }
+.cloud-controls label { display:inline-flex; flex-direction:column; gap:4px; margin:8px 12px 8px 0; }
+.cloud-controls input,.cloud-controls select { min-height:44px; padding:8px; max-width:100%; border:1px solid #64748b; border-radius:4px; background:#0b1118; color:#fff; }
+.cloud-error,.cloud-notice { position:relative; z-index:6; margin:0; padding:12px 20px; font:14px/1.5 system-ui,sans-serif; background:#57252a; color:#fff; overflow-wrap:anywhere; }
+.cloud-notice { background:#174436; }
+.cloud-welcome { padding:10vh 8vw; font:18px/1.6 system-ui,sans-serif; }
+.cloud-controls code,.cloud-controls a { overflow-wrap:anywhere; color:#a5d9ff; }
+.share-controls img { display:block; max-width:256px; width:100%; margin:10px 0; }
+.share-controls>div { width:100%; }
+.personal-results article { display:flex; flex-direction:column; padding:10px 0; border-top:1px solid #475569; }
+.local-label { position:relative; z-index:5; padding:6px 16px; background:#18212a; color:#c2ccd6; font:12px system-ui,sans-serif; }
+@media(max-width:640px) {
+ .cloud-bar,.cloud-controls { padding:10px 12px; }
+ .cloud-controls form,.cloud-controls label { width:100%; margin-right:0; }
+ .cloud-controls input,.cloud-controls select { width:100%; }
+ .toolbar { flex-wrap:wrap; gap:6px; max-width:100%; padding:8px; }
+ .toolbar .tb { min-height:44px; }
+ .cloud-shell .stage { min-height:75dvh; }
+ .cloud-shell .app { overflow:auto; }
+}
+@media(pointer:coarse) { .app.sleep .toolbar { visibility:visible; } }
+
+/* The TV's viewport-based rem scale is intentionally replaced only for shared phones. */
+@media (max-width:640px) {
+ html:has(.cloud-shell) { font-size:16px; }
+ body:has(.cloud-shell) { height:auto; min-height:100dvh; overflow:auto; }
+ .cloud-shell { width:100%; overflow-x:clip; }
+ .cloud-shell :is(button,input,select) { font-size:16px; }
+ .cloud-shell button { min-height:44px; }
+ .cloud-shell :is(input,select) { min-height:44px; max-width:100%; min-width:0; }
+ .cloud-shell :is(.cloud-bar,.cloud-controls,.cloud-welcome) { overflow-wrap:anywhere; }
+ .cloud-shell .app { overflow:visible; }
+ .cloud-shell .stage,.cloud-shell .stage:has(> .side) { position:relative; inset:auto; display:flex; flex-direction:column; gap:20px; min-height:75dvh; padding:20px 12px 16px; animation:none; }
+ .cloud-shell .hdr { gap:18px; }
+ .cloud-shell .bar { flex-wrap:wrap; gap:12px; font-size:12px; letter-spacing:0; }
+ .cloud-shell .brand,.cloud-shell .prompt { flex-basis:100%; overflow-wrap:anywhere; }
+ .cloud-shell .quote { display:flex; flex-direction:column; align-items:stretch; gap:12px; padding:14px 10px; }
+ .cloud-shell .price { font-size:48px; }
+ .cloud-shell .quote dl { flex-wrap:wrap; gap:16px; }
+ .cloud-shell .quote dt { font-size:11px; }
+ .cloud-shell .quote dd { font-size:16px; }
+ .cloud-shell .spark { height:90px; margin:0; }
+ .cloud-shell .panel { width:100%; min-height:120px; padding:8px 0; }
+ .cloud-shell .body { height:auto; }
+ .cloud-shell .side { display:none; }
+ .cloud-shell .board { display:flex; flex-direction:column; height:auto; }
+ .cloud-shell .row { display:block; flex:none; height:84px; min-height:84px; }
+ .cloud-shell .row-in { grid-template-columns:40px minmax(0,1fr) auto auto; gap:10px; padding:10px 6px; }
+ .cloud-shell .row .avatar { width:36px; height:36px; }
+ .cloud-shell .who b { font-size:18px; }
+ .cloud-shell .who small { margin-top:6px; font-size:11px; letter-spacing:0; }
+ .cloud-shell .row .stack { display:none; }
+ .cloud-shell .rebuys { min-width:20px; font-size:14px; }
+ .cloud-shell .money { min-width:52px; }
+ .cloud-shell .money b { font-size:22px; }
+ .cloud-shell :is(.money,.rebuys) small { font-size:10px; margin-bottom:5px; }
+ .cloud-shell .toolbar { display:flex; flex-wrap:wrap; align-self:stretch; justify-content:center; max-width:100%; gap:4px; padding:8px; border-radius:12px; }
+ .cloud-shell .toolbar .tb { min-height:44px; padding:8px; font-size:14px; }
+ .cloud-shell .toolbar .sep { display:none; }
+ .cloud-shell .toolbar input[type=range] { max-width:110px; }
+ .cloud-shell .ticker { min-height:48px; max-width:100%; gap:10px; font-size:11px; }
+ .cloud-shell .facts { grid-template-columns:1fr; }
+ .cloud-shell .lb { overflow-x:auto; }
+ .cloud-shell .lb-row { min-width:760px; min-height:52px; font-size:18px; }
+ .cloud-shell .title h1 { font-size:30px; }
+ .cloud-shell .sheet,.cloud-shell .sheet.wide { width:calc(100vw - 24px); max-width:calc(100vw - 24px); max-height:calc(100dvh - 32px); overflow:auto; margin:auto; }
+ .cloud-shell .sheet-in { padding:16px; min-width:0; }
+ .cloud-shell .sheet header { margin:0 0 12px; padding:0; gap:10px; }
+ .cloud-shell .sheet h2 { font-size:24px; min-width:0; overflow-wrap:anywhere; }
+ .cloud-shell .sheet h3 { font-size:12px; line-height:1.5; }
+ .cloud-shell .sheet :is(.field,small) { font-size:12px; }
+ .cloud-shell .sheet .x { min-width:44px; min-height:44px; flex-shrink:0; }
+ .cloud-shell .sheet .grid2 { grid-template-columns:minmax(0,1fr); gap:16px; }
+ .cloud-shell .sheet .find { flex-direction:column; align-items:stretch; gap:8px; }
+ .cloud-shell .sheet .find input { flex:auto; width:100%; }
+ .cloud-shell .sheet .seg { display:flex; flex-wrap:wrap; max-width:100%; }
+ .cloud-shell .sheet .seg button { padding:8px 12px; }
+ .cloud-shell .sheet .custom { margin:0; max-width:100%; }
+ .cloud-shell .sheet .chips-row { gap:10px; }
+ .cloud-shell .sheet .chipbtn { width:68px; height:68px; padding:8px; font-size:14px; }
+ .cloud-shell .sheet :is(.counter,.chipvals) { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 8px; }
+ .cloud-shell .sheet .count input { width:64px; }
+ .cloud-shell .sheet .money-in input { width:80px; }
+ .cloud-shell .sheet .cashout { gap:12px; }
+ .cloud-shell .sheet .cashout .btn { margin:0; }
+ .cloud-shell .sheet .roster li { flex-wrap:wrap; gap:8px; padding:12px 0; }
+ .cloud-shell .sheet .roster input { flex:1; width:120px; min-width:0; }
+ .cloud-shell .sheet .roster .swatches { order:4; flex-basis:100%; }
+ .cloud-shell .sheet .swatches button { min-width:36px; }
+ .cloud-shell .sheet .newp input { width:100%; }
+ .cloud-shell .sheet .newp .swatches { width:100%; }
+ .cloud-shell .sheet .night-body { display:block; max-width:100%; overflow-x:auto; }
+ .cloud-shell .sheet .tbl { font-size:14px; min-width:430px; }
+ .cloud-shell .sheet .tbl th { font-size:11px; letter-spacing:0; }
+ .cloud-shell .sheet .log li { grid-template-columns:auto 30px minmax(0,1fr) auto; gap:8px; font-size:14px; }
+ .cloud-shell .sheet .log li :is(time, .tagx) { display:none; }
+ .cloud-shell .sheet .paylist li { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; font-size:14px; }
+ .cloud-shell .sheet .paylist li b { grid-column:3; font-size:18px; }
+ .cloud-shell .sheet .warn { flex-wrap:wrap; padding:12px; }
+ .cloud-shell .sheet .slots { grid-template-columns:1fr; }
+ .cloud-shell .sheet .deck { grid-template-columns:repeat(7,minmax(0,1fr)); }
+ .cloud-shell .sheet .card { padding:8px 2px; font-size:14px; }
+ .cloud-shell .sheet .oval { margin:40px 44px; height:260px; }
+ .cloud-shell .sheet .seat { font-size:13px; }
+ .cloud-shell .sheet .seat .avatar { width:38px; height:38px; }
+ .cloud-shell .toast { max-width:calc(100vw - 24px); }
+}

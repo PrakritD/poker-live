@@ -238,7 +238,7 @@ export function setMusic(on: boolean) {
   if (!ctx) return
   clearInterval(timer)
   timer = 0
-  if (on) (step = 0), (nextT = ctx.currentTime + 0.1), (timer = setInterval(tick, 50))
+  if (on) (step = 0), (nextT = ctx.currentTime + 0.1), (timer = window.setInterval(tick, 50))
 }
 
 export function setVolume(v: number) {

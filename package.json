@@ -5,13 +5,19 @@
   "scripts": {
     "start": "vite --port 5199 --strictPort --open",
     "build": "tsc && vite build",
-    "test": "node --test src/*.test.ts"
+    "test": "node --test src/*.test.ts",
+    "test:browser": "playwright test",
+    "test:database": "bash scripts/test-database.sh"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
+    "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "typescript": "^7.0.2",
